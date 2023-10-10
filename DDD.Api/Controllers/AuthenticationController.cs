@@ -1,4 +1,5 @@
 using DDD.Application.Authentication;
+using DDD.Application.Common.Interfaces.Authentication;
 using DDD.Contracts.Authentication;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +11,14 @@ public class AuthenticationController : ControllerBase
 {
 
     public readonly IAuthenticationService _authenticationService;
+    public readonly IJwtTokenGenerator _jwtTokenGenerator;
 
-    public AuthenticationController(IAuthenticationService authenticationService)
+
+    public AuthenticationController(IAuthenticationService authenticationService, IJwtTokenGenerator jwtTokenGenerator)
     {
         _authenticationService = authenticationService;
+        _jwtTokenGenerator = jwtTokenGenerator;
+
     }
 
     [HttpPost("register")]
@@ -21,12 +26,14 @@ public class AuthenticationController : ControllerBase
     {
         var authResult = _authenticationService.Register(request.FirstName, request.LastName, request.Email, request.Password);
 
+        var userId = Guid.NewGuid();
+        var token = _jwtTokenGenerator.GenerateToken(userId, request.FirstName, request.LastName);
         var response = new AuthenticationResponse(
-            authResult.Id,
+            userId,
             authResult.FirstName,
             authResult.LastName,
             authResult.Email,
-            authResult.Token
+            token
         );
         return Ok(response);
     }
